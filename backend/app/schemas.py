@@ -38,6 +38,7 @@ class PerritoOut(BaseModel):
     nombre: str
     foto_archivo: str
     id_raza: Optional[int]
+    raza_nombre: Optional[str] = None
     latitud: float
     longitud: float
     fecha_registro: datetime

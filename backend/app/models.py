@@ -33,6 +33,9 @@ class Perrito(Base):
             {"id": pc.color.id, "nombre": pc.color.nombre, "es_principal": pc.es_principal}
             for pc in self.perrito_colores
         ]
+    @property
+    def raza_nombre(self):
+        return self.raza.nombre if self.raza else None
 
 class PerritoColor(Base):
     __tablename__ = "perrito_colores"
