@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from PIL import Image
 from app.database import get_db
 from app import models, schemas
+from sqlalchemy import func
 
 router = APIRouter(prefix="/perritos", tags=["perritos"])
 
@@ -111,6 +112,15 @@ def crear_perrito(
 def listar_perritos(db: Session = Depends(get_db)):
     return db.query(models.Perrito).all()
 
+@router.get("/estadisticas/por-color", response_model=list[schemas.ConteoColorOut])
+def perritos_por_color(db: Session = Depends(get_db)):
+    resultados = (
+        db.query(models.Color.nombre, func.count(models.PerritoColor.id_perrito))
+        .join(models.PerritoColor, models.PerritoColor.id_color == models.Color.id)
+        .group_by(models.Color.nombre)
+        .all()
+    )
+    return [{"color": nombre, "total": total} for nombre, total in resultados]
 
 @router.get("/{perrito_id}", response_model=schemas.PerritoOut)
 def ver_perrito(perrito_id: int, db: Session = Depends(get_db)):

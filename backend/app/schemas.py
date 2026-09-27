@@ -59,3 +59,7 @@ class ColorCatalogoOut(BaseModel):
 
     class Config:
         from_attributes = True
+
+class ConteoColorOut(BaseModel):
+    color: str
+    total: int
