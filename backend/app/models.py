@@ -25,7 +25,14 @@ class Perrito(Base):
     clave_idempotencia = Column(String(100), unique=True, nullable=False)
 
     raza = relationship("Raza")
-    colores = relationship("PerritoColor", back_populates="perrito")
+    perrito_colores = relationship("PerritoColor", back_populates="perrito")
+
+    @property
+    def colores(self):
+        return [
+            {"id": pc.color.id, "nombre": pc.color.nombre, "es_principal": pc.es_principal}
+            for pc in self.perrito_colores
+        ]
 
 class PerritoColor(Base):
     __tablename__ = "perrito_colores"
@@ -33,5 +40,5 @@ class PerritoColor(Base):
     id_color = Column(Integer, ForeignKey("colores.id"), primary_key=True)
     es_principal = Column(Boolean, default=False, nullable=False)
 
-    perrito = relationship("Perrito", back_populates="colores")
+    perrito = relationship("Perrito", back_populates="perrito_colores")
     color = relationship("Color")
