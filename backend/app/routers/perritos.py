@@ -1,7 +1,7 @@
 import os
 import uuid
 from typing import Optional, List
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, Response, status
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from PIL import Image
@@ -41,15 +41,26 @@ def guardar_imagen(archivo: UploadFile) -> str:
 
 @router.post("/", response_model=schemas.PerritoOut, status_code=201)
 def crear_perrito(
+    response: Response,
     nombre: str = Form(...),
     id_raza: Optional[int] = Form(None),
     latitud: float = Form(...),
     longitud: float = Form(...),
     color_principal_id: int = Form(...),
-    colores_adicionales: Optional[str] = Form(""),  # ej. "2,3" o vacío
+    colores_adicionales: Optional[str] = Form(""),
+    clave_idempotencia: str = Form(...),
     foto: UploadFile = File(...),
     db: Session = Depends(get_db),
 ):
+    # 1. Idempotencia: si ya existe un registro con esta clave, regresamos
+    #    exactamente el mismo perrito, sin tocar la base de datos de nuevo.
+    perrito_existente = db.query(models.Perrito).filter(
+        models.Perrito.clave_idempotencia == clave_idempotencia
+    ).first()
+    if perrito_existente:
+        response.status_code = status.HTTP_200_OK
+        return perrito_existente
+
     nombre_limpio = nombre.strip()
     if not nombre_limpio:
         raise HTTPException(status_code=400, detail="El nombre no puede estar vacío ni ser solo espacios")
@@ -82,7 +93,7 @@ def crear_perrito(
         id_raza=id_raza,
         latitud=latitud,
         longitud=longitud,
-        clave_idempotencia=f"temporal-{uuid.uuid4().hex}",
+        clave_idempotencia=clave_idempotencia,  # ← ya no es un valor temporal random
     )
     db.add(nuevo_perrito)
     db.flush()
