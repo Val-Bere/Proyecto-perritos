@@ -45,3 +45,17 @@ class PerritoOut(BaseModel):
 
     class Config:
         from_attributes = True
+
+class RazaOut(BaseModel):
+    id: int
+    nombre: str
+
+    class Config:
+        from_attributes = True
+
+class ColorCatalogoOut(BaseModel):
+    id: int
+    nombre: str
+
+    class Config:
+        from_attributes = True

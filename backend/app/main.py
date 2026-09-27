@@ -2,11 +2,12 @@ from fastapi import FastAPI, Depends
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 from app.database import get_db
-from app.routers import perritos
+from app.routers import perritos, catalogos
 
 app = FastAPI(title="Registro de perritos de la calle")
 
 app.include_router(perritos.router)
+app.include_router(catalogos.router)
 
 @app.get("/")
 def raiz():
