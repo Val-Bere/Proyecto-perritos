@@ -1,8 +1,8 @@
 #!/bin/bash
 # Carga 15 perritos de prueba llamando a la API (asi las fotos se validan y guardan bien)
 API="http://localhost:8000/perritos/"
+shopt -s nullglob
 FOTOS=(~/fotos_prueba/*.jpg ~/fotos_prueba/*.jpeg ~/fotos_prueba/*.png)
-i=0
 
 # nombre|latitud|longitud|color_principal_id|colores_adicionales|id_raza
 while IFS='|' read -r nombre lat lng color adicionales raza; do
