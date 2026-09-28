@@ -11,8 +11,8 @@ Sistema de registro ciudadano de perros callejeros: los usuarios reportan un per
 ## Tecnologías usadas
 
 - **Backend:** Python 3, FastAPI, Uvicorn, SQLAlchemy (ORM), Pydantic, Pillow (validación de imágenes)
-- **Base de datos:** MySQL / MariaDB
-- **Frontend:** HTML, CSS, JavaScript (vanilla), Leaflet.js para mapas
+- **Base de datos:** MySQL
+- **Frontend:** HTML, CSS, JavaScript, Leaflet.js para mapas
 - **Control de versiones:** Git + GitHub (ramas y Pull Requests)
 
 ## Instalación y ejecución
