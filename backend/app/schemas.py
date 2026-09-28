@@ -1,43 +1,24 @@
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel  # Base para definir la forma de los datos
 from typing import Optional, List
 from datetime import datetime
 
-class PerritoCreate(BaseModel):
-    nombre: str
-    id_raza: Optional[int] = None
-    foto_archivo: str
-    latitud: float
-    longitud: float
-    color_principal_id: int
-    colores_adicionales: List[int] = []
-
-    @field_validator("nombre")
-    @classmethod
-    def nombre_no_vacio(cls, valor):
-        if not valor.strip():
-            raise ValueError("El nombre no puede estar vacío ni ser solo espacios")
-        return valor.strip()
-
-    @field_validator("colores_adicionales")
-    @classmethod
-    def max_dos_adicionales(cls, valor):
-        if len(valor) > 2:
-            raise ValueError("Máximo 2 colores adicionales")
-        return valor
 
 class ColorOut(BaseModel):
+    """Un color dentro de la respuesta de un perrito."""
     id: int
     nombre: str
     es_principal: bool
 
     class Config:
-        from_attributes = True
+        from_attributes = True  # Permite construir el schema a partir de objetos del ORM
+
 
 class PerritoOut(BaseModel):
+    """Forma exacta de la respuesta al registrar, listar o ver un perrito."""
     id: int
     nombre: str
     foto_archivo: str
-    id_raza: Optional[int]
+    id_raza: Optional[int]  # Optional = puede ser None (perrito sin raza)
     raza_nombre: Optional[str] = None
     latitud: float
     longitud: float
@@ -47,20 +28,26 @@ class PerritoOut(BaseModel):
     class Config:
         from_attributes = True
 
+
 class RazaOut(BaseModel):
+    """Una raza del catálogo."""
     id: int
     nombre: str
 
     class Config:
         from_attributes = True
+
 
 class ColorCatalogoOut(BaseModel):
+    """Un color del catálogo (sin es_principal, porque aquí no pertenece a ningún perrito)."""
     id: int
     nombre: str
 
     class Config:
         from_attributes = True
 
+
 class ConteoColorOut(BaseModel):
+    """Resultado de la agregación: cuántos perritos hay de cada color."""
     color: str
     total: int
