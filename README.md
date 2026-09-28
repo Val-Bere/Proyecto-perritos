@@ -75,7 +75,6 @@ uvicorn app.main:app --reload
 
 ---
 
-# Proyecto-perritos
 ## Endpoints de la API
 
 Base URL local: `http://localhost:8000`
