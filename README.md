@@ -1,3 +1,80 @@
+# 🐾 Registro de Perritos de la Calle
+
+Sistema de registro ciudadano de perros callejeros: los usuarios reportan un perrito con foto, ubicación en mapa, raza y colores.
+
+## Equipo y roles
+
+- **Backend (API):** Valery Alvarado — Python + FastAPI + SQLAlchemy
+- **Frontend:** Marisol Hernández — HTML, CSS, JavaScript, Leaflet.js
+- **Base de datos (DBA):** Alma Bujanda — MySQL/MariaDB vía phpMyAdmin
+
+## Tecnologías usadas
+
+- **Backend:** Python 3, FastAPI, Uvicorn, SQLAlchemy (ORM), Pydantic, Pillow (validación de imágenes)
+- **Base de datos:** MySQL / MariaDB
+- **Frontend:** HTML, CSS, JavaScript (vanilla), Leaflet.js para mapas
+- **Control de versiones:** Git + GitHub (ramas y Pull Requests)
+
+## Instalación y ejecución
+
+1. Clona el repositorio:
+git clone https://github.com/Val-Bere/Proyecto-perritos.git
+cd Proyecto-perritos
+
+2. Entra al backend, crea y activa el entorno virtual:
+cd backend
+python3 -m venv venv
+source venv/bin/activate
+
+3. Instala las dependencias:
+pip install -r requirements.txt
+
+4. Crea tu `.env` a partir del ejemplo y llena tus datos reales de MySQL:
+cp .env.example .env
+
+DB_HOST=localhost
+DB_PORT=3306
+DB_USER=root
+DB_PASSWORD=tu_password
+DB_NAME=perritos_db
+RUTA_IMAGENES=/ruta/fuera/del/proyecto/para/guardar/fotos
+   
+   > `RUTA_IMAGENES` debe estar fuera del proyecto para que las fotos no se suban al repositorio.
+
+5. Importa la base de datos:
+mysql -u root -p perritos_db < database/schema.sql
+mysql -u root -p perritos_db < database/catalogos.sql
+
+6. Levanta el servidor:
+uvicorn app.main:app --reload
+
+7. Abre `http://localhost:8000/` — ahí se sirve el frontend directamente desde el backend.
+
+## Seguridad y validaciones
+
+- **CORS** habilitado para permitir que el frontend se comunique con la API sin bloqueos del navegador.
+- **Validación de imágenes:** cada foto se abre con Pillow para confirmar que es una imagen real (no solo por extensión), se restringe a JPEG/PNG/WEBP, y se guarda con un nombre generado por el servidor (UUID) fuera de la carpeta del proyecto, evitando ataques de path traversal y sobreescrituras.
+- **Mensajes de error amigables:** los errores de validación se traducen a español entendible para el usuario final en vez de mostrar errores técnicos de Pydantic.
+
+## Estructura del proyecto
+├── backend/
+│ ├── app/
+│ │ ├── main.py # Configuración de la app, CORS, manejo de errores
+│ │ ├── database.py # Conexión a MySQL con SQLAlchemy
+│ │ ├── models.py # Modelos ORM (Perrito, Raza, Color, PerritoColor)
+│ │ ├── schemas.py # Esquemas Pydantic
+│ │ └── routers/
+│ │ ├── perritos.py
+│ │ └── catalogos.py
+│ ├── requirements.txt
+│ └── .env.example
+├── database/
+│ ├── schema.sql
+│ └── catalogos.sql
+└── index.html
+
+---
+
 # Proyecto-perritos
 ## Endpoints de la API
 
@@ -135,3 +212,13 @@ if perrito_existente:
 Si existe, se regresa el mismo perrito con código `200` (sin volver a guardar la imagen ni tocar la base de datos). Si no existe, se crea normalmente y se regresa `201`.
 
 **Prueba del doble envío**: enviar dos veces el mismo `POST /perritos/` con idéntico `clave_idempotencia` — la primera respuesta es `201` con un `id` nuevo; la segunda es `200` con el mismo `id`, y `GET /perritos/` confirma que solo existe un registro.
+
+## Demo desde celular
+
+Para probar cámara y geolocalización desde un teléfono (requieren HTTPS):
+
+1. Levanta el backend: `uvicorn app.main:app --reload`
+2. En otra terminal: `cloudflared tunnel --url http://localhost:8000`
+3. Abre en el celular la URL `https://....trycloudflare.com` que se genera.
+
+> Nota: la URL cambia cada vez que se vuelve a correr el túnel.
