@@ -573,12 +573,13 @@
             const formData = new FormData();
             formData.append('nombre', document.getElementById('nombre').value.trim());
             formData.append('id_raza', document.getElementById('id_raza').value || '');
-            formData.append('id_color_principal', document.getElementById('id_color_principal').value);
+            formData.append('color_principal_id', document.getElementById('id_color_principal').value);
 
+            // Colores adicionales: un solo campo de texto con los ids separados por coma.
             const colAd1 = document.getElementById('id_color_adicional_1').value;
             const colAd2 = document.getElementById('id_color_adicional_2').value;
-            if (colAd1) formData.append('id_color_adicional_1', colAd1);
-            if (colAd2) formData.append('id_color_adicional_2', colAd2);
+            const adicionales = [colAd1, colAd2].filter(c => c !== '');
+            formData.append('colores_adicionales', adicionales.join(','));
 
             formData.append('latitud', latActual);
             formData.append('longitud', lngActual);
@@ -615,13 +616,14 @@
         let mapGeneralCargado = false;
 
         function popupPerrito(p) {
-            const fotoUrl = p.foto_url || `${API_BASE}/imagenes/${p.id}`;
+            const fotoUrl = `${API_BASE}/perritos/imagenes/${p.foto_archivo}`;
+            const colorPrincipal = p.colores?.find(c => c.es_principal)?.nombre;
             const div = document.createElement('div');
             div.className = 'popup-perrito';
             div.innerHTML = `
                 <img src="${fotoUrl}" alt="${p.nombre}">
                 <h3>${p.nombre}</h3>
-                <p>${p.color_principal || 'Color sin especificar'}</p>
+                <p>${colorPrincipal || 'Color sin especificar'}</p>
                 <button>Ver detalle</button>
             `;
             div.querySelector('button').addEventListener('click', () => verDetalle(p.id));
@@ -665,14 +667,15 @@
         let listaCargada = false;
 
         function itemPerrito(p) {
-            const fotoUrl = p.foto_url || `${API_BASE}/imagenes/${p.id}`;
+            const fotoUrl = `${API_BASE}/perritos/imagenes/${p.foto_archivo}`;
+            const colorPrincipal = p.colores?.find(c => c.es_principal)?.nombre;
             const div = document.createElement('div');
             div.className = 'item';
             div.innerHTML = `
                 <img src="${fotoUrl}" alt="${p.nombre}">
                 <div class="item-info">
                     <h3>${p.nombre}</h3>
-                    <p>${p.color_principal || 'Color sin especificar'}${p.raza ? ' · ' + p.raza : ''}</p>
+                    <p>${colorPrincipal || 'Color sin especificar'}${p.raza_nombre ? ' · ' + p.raza_nombre : ''}</p>
                 </div>
             `;
             div.addEventListener('click', () => verDetalle(p.id));
@@ -717,9 +720,10 @@
                 if (!res.ok) throw new Error('Perrito no encontrado');
                 const p = await res.json();
 
-                const fotoUrl = p.foto_url || `${API_BASE}/imagenes/${p.id}`;
-                const colores = [p.color_principal, p.color_adicional_1, p.color_adicional_2]
-                    .filter(Boolean).join(', ');
+                const fotoUrl = `${API_BASE}/perritos/imagenes/${p.foto_archivo}`;
+                const colorPrincipal = p.colores?.find(c => c.es_principal)?.nombre;
+                const coloresAdicionales = p.colores?.filter(c => !c.es_principal).map(c => c.nombre) || [];
+                const colores = [colorPrincipal, ...coloresAdicionales].filter(Boolean).join(', ');
 
                 contenedor.innerHTML = `
                     <div class="card detalle-card">
@@ -729,7 +733,7 @@
                             <p class="fecha">Registrado el ${p.fecha_registro || 'fecha no disponible'}</p>
                             <div class="dato">
                                 <span class="etiqueta">Raza</span>
-                                <span class="valor">${p.raza || 'Sin raza definida / criollo'}</span>
+                                <span class="valor">${p.raza_nombre || 'Sin raza definida / criollo'}</span>
                             </div>
                             <div class="dato">
                                 <span class="etiqueta">Colores</span>
