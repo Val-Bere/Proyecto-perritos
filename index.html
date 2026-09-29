@@ -595,6 +595,20 @@
                 if (response.ok) {
                     successBox.textContent = '¡Perrito registrado con éxito!';
                     successBox.style.display = 'block';
+
+                    // El perrito nuevo ya se guardó en el backend, pero la Lista y el
+                    // Mapa general tienen su propia copia en memoria para no pedirla
+                    // de más. Hay que invalidarla para que la próxima vez que se
+                    // visiten esas pestañas, vuelvan a pedir los datos actualizados.
+                    listaCargada = false;
+                    document.getElementById('lista').innerHTML = '';
+                    document.getElementById('estadoLista').style.display = 'none';
+
+                    mapGeneralCargado = false;
+                    mapGeneral.eachLayer(capa => {
+                        if (capa instanceof L.Marker) mapGeneral.removeLayer(capa);
+                    });
+                    document.getElementById('estadoMapa').style.display = 'none';
                 } else {
                     mostrarErrores(['No se pudo registrar al perrito. Intenta de nuevo en unos segundos.']);
                 }
