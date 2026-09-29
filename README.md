@@ -11,44 +11,161 @@ Sistema de registro ciudadano de perros callejeros: los usuarios reportan un per
 ## Tecnologías usadas
 
 - **Backend:** Python 3, FastAPI, Uvicorn, SQLAlchemy (ORM), Pydantic, Pillow (validación de imágenes)
-- **Base de datos:** MySQL
+- **Base de datos:** MySQL / MariaDB
 - **Frontend:** HTML, CSS, JavaScript, Leaflet.js para mapas
 - **Control de versiones:** Git + GitHub (ramas y Pull Requests)
 
+## Arquitectura
+
+El sistema sigue una arquitectura cliente-servidor de 3 capas:
+
+```
+┌─────────────────────┐      HTTP/JSON       ┌──────────────────────┐      SQL       ┌─────────────────┐
+│  Frontend (cliente)  │  ────────────────►   │   Backend (API REST) │  ─────────►    │  Base de datos   │
+│  HTML + JS + Leaflet │  ◄────────────────   │  FastAPI + SQLAlchemy│  ◄─────────    │  MySQL/MariaDB   │
+└─────────────────────┘                       └──────────────────────┘                └─────────────────┘
+```
+
+- **Capa de presentación (frontend):** `index.html`, corre en el navegador del usuario (o del celular vía túnel HTTPS). Se comunica con el backend por `fetch()` usando JSON y `multipart/form-data`.
+- **Capa de aplicación (backend):** API REST construida con FastAPI. Recibe las peticiones HTTP, valida los datos (Pydantic), aplica las reglas de negocio (idempotencia, validación de imágenes) y se comunica con la base de datos a través del ORM SQLAlchemy.
+- **Capa de datos:** MySQL/MariaDB, con tablas relacionadas por llaves foráneas (`perritos`, `razas`, `colores`, `perrito_colores`).
+
+El backend expone su documentación interactiva (Swagger UI) en `/docs`, generada automáticamente por FastAPI a partir de los esquemas Pydantic.
+
+## Requisitos del sistema y versiones
+
+| Software | Versión usada / mínima | Notas |
+|---|---|---|
+| Python | 3.11+ | Se probó con Python 3.11 y 3.12 |
+| MySQL / MariaDB | MySQL 8.x o MariaDB 10.4+ | Se probó con MariaDB 10.4.32 (vía phpMyAdmin) |
+| pip | incluido con Python | Gestor de paquetes |
+| Node.js | No requerido | El frontend es HTML/JS plano, no necesita build |
+| Sistema operativo | macOS 13+ o Windows 10/11 | Instrucciones de instalación separadas abajo |
+
+Las dependencias exactas de Python (con sus versiones) están fijadas en `backend/requirements.txt` y se instalan automáticamente en el paso de instalación.
+
+## Alternativa sin Git: descargar el proyecto como ZIP
+
+Si no tienes Git instalado (o no quieres instalarlo), puedes descargar el proyecto directamente sin usar `git clone`:
+
+1. Ve a `https://github.com/Val-Bere/Proyecto-perritos` en tu navegador.
+2. Da clic en el botón verde **"Code"** y luego en **"Download ZIP"**.
+3. Descomprime el archivo ZIP descargado:
+   - **En macOS:** doble clic en el archivo `.zip` descargado (normalmente en tu carpeta `Descargas`).
+   - **En Windows:** clic derecho sobre el `.zip` → **"Extraer todo..."** → elige dónde guardarlo.
+4. Abre una terminal (macOS) o PowerShell (Windows) y navega a la carpeta que acabas de extraer:
+   ```
+   cd ruta/a/la/carpeta/Proyecto-perritos-main
+   ```
+   > Nota: GitHub agrega `-main` al nombre de la carpeta cuando descargas el ZIP en vez de usar `git clone`.
+
+Desde aquí, continúa con el paso **2 en adelante** de la sección "Instalación y ejecución" (crear el entorno virtual, etc.) — todo lo demás es exactamente igual, solo te saltas el paso de `git clone` porque ya tienes el código descargado.
+
+> **Limitación:** con este método no podrás hacer `git pull` para recibir actualizaciones futuras del repositorio, ni contribuir con tus propios cambios — tendrías que volver a descargar el ZIP cada vez que el código cambie. Para el proyecto en equipo, Git sigue siendo la forma recomendada.
+
 ## Instalación y ejecución
 
-1. Clona el repositorio:
-git clone https://github.com/Val-Bere/Proyecto-perritos.git
-cd Proyecto-perritos
+### En macOS
 
-2. Entra al backend, crea y activa el entorno virtual:
-cd backend
-python3 -m venv venv
-source venv/bin/activate
+1. Verifica que tienes Python 3.11+ instalado:
+   ```
+   python3 --version
+   ```
+   Si no lo tienes, instálalo desde [python.org](https://www.python.org/downloads/) o con Homebrew:
+   ```
+   brew install python@3.11
+   ```
 
-3. Instala las dependencias:
-pip install -r requirements.txt
+2. Clona el repositorio:
+   ```
+   git clone https://github.com/Val-Bere/Proyecto-perritos.git
+   cd Proyecto-perritos
+   ```
+   (Si no tienes Git, ve a la sección "Alternativa sin Git" más arriba.)
 
-4. Crea tu `.env` a partir del ejemplo y llena tus datos reales de MySQL:
-cp .env.example .env
+3. Entra al backend, crea y activa el entorno virtual:
+   ```
+   cd backend
+   python3 -m venv venv
+   source venv/bin/activate
+   ```
 
-DB_HOST=localhost
-DB_PORT=3306
-DB_USER=root
-DB_PASSWORD=tu_password
-DB_NAME=perritos_db
-RUTA_IMAGENES=/ruta/fuera/del/proyecto/para/guardar/fotos
-   
+4. Instala las dependencias:
+   ```
+   pip install -r requirements.txt
+   ```
+
+5. Crea tu `.env` a partir del ejemplo y llena tus datos reales de MySQL:
+   ```
+   cp .env.example .env
+   ```
+   ```
+   DB_HOST=localhost
+   DB_PORT=3306
+   DB_USER=root
+   DB_PASSWORD=tu_password
+   DB_NAME=perritos_db
+   RUTA_IMAGENES=/ruta/fuera/del/proyecto/para/guardar/fotos
+   ```
    > `RUTA_IMAGENES` debe estar fuera del proyecto para que las fotos no se suban al repositorio.
 
-5. Importa la base de datos:
-mysql -u root -p perritos_db < database/schema.sql
-mysql -u root -p perritos_db < database/catalogos.sql
+6. Importa la base de datos (con MySQL instalado, por ejemplo vía [MySQL Community Server](https://dev.mysql.com/downloads/mysql/) o [MAMP](https://www.mamp.info/)):
+   ```
+   mysql -u root -p perritos_db < ../database/schema.sql
+   mysql -u root -p perritos_db < ../database/catalogos.sql
+   ```
 
-6. Levanta el servidor:
-uvicorn app.main:app --reload
+7. Levanta el servidor:
+   ```
+   uvicorn app.main:app --reload
+   ```
 
-7. Abre `http://localhost:8000/` — ahí se sirve el frontend directamente desde el backend.
+8. Abre `http://localhost:8000/` en tu navegador — ahí se sirve el frontend directamente desde el backend.
+
+### En Windows
+
+1. Instala Python 3.11+ desde [python.org](https://www.python.org/downloads/windows/) — marca la casilla **"Add python.exe to PATH"** durante la instalación.
+
+2. Clona el repositorio (con [Git para Windows](https://git-scm.com/download/win) instalado), usando la terminal PowerShell o Git Bash:
+   ```
+   git clone https://github.com/Val-Bere/Proyecto-perritos.git
+   cd Proyecto-perritos
+   ```
+   (Si no tienes Git, ve a la sección "Alternativa sin Git" más arriba.)
+
+3. Entra al backend, crea y activa el entorno virtual:
+   ```
+   cd backend
+   python -m venv venv
+   venv\Scripts\activate
+   ```
+   > En PowerShell, si aparece un error de permisos al activar, corre primero: `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass`
+
+4. Instala las dependencias:
+   ```
+   pip install -r requirements.txt
+   ```
+
+5. Crea tu `.env` a partir del ejemplo:
+   ```
+   copy .env.example .env
+   ```
+   Y llena tus datos reales de MySQL (mismo formato que en macOS, ver arriba). Instala MySQL con el [MySQL Installer para Windows](https://dev.mysql.com/downloads/installer/) o usando [XAMPP](https://www.apachefriends.org/es/index.html), que incluye phpMyAdmin.
+
+6. Importa la base de datos (desde phpMyAdmin, importando los archivos directamente, o por línea de comandos si tienes `mysql` en el PATH):
+   ```
+   mysql -u root -p perritos_db < ..\database\schema.sql
+   mysql -u root -p perritos_db < ..\database\catalogos.sql
+   ```
+
+7. Levanta el servidor:
+   ```
+   uvicorn app.main:app --reload
+   ```
+
+8. Abre `http://localhost:8000/` en tu navegador.
+
+> **Nota:** el comando `cloudflared` para la demo desde celular (ver más abajo) también está disponible para Windows — se descarga desde la [página de releases de cloudflared](https://github.com/cloudflare/cloudflared/releases) en vez de usar `brew`.
 
 ## Seguridad y validaciones
 
@@ -57,21 +174,24 @@ uvicorn app.main:app --reload
 - **Mensajes de error amigables:** los errores de validación se traducen a español entendible para el usuario final en vez de mostrar errores técnicos de Pydantic.
 
 ## Estructura del proyecto
+
+```
 ├── backend/
-│ ├── app/
-│ │ ├── main.py # Configuración de la app, CORS, manejo de errores
-│ │ ├── database.py # Conexión a MySQL con SQLAlchemy
-│ │ ├── models.py # Modelos ORM (Perrito, Raza, Color, PerritoColor)
-│ │ ├── schemas.py # Esquemas Pydantic
-│ │ └── routers/
-│ │ ├── perritos.py
-│ │ └── catalogos.py
-│ ├── requirements.txt
-│ └── .env.example
+│   ├── app/
+│   │   ├── main.py          # Configuración de la app, CORS, manejo de errores
+│   │   ├── database.py      # Conexión a MySQL con SQLAlchemy
+│   │   ├── models.py        # Modelos ORM (Perrito, Raza, Color, PerritoColor)
+│   │   ├── schemas.py       # Esquemas Pydantic
+│   │   └── routers/
+│   │       ├── perritos.py
+│   │       └── catalogos.py
+│   ├── requirements.txt
+│   └── .env.example
 ├── database/
-│ ├── schema.sql
-│ └── catalogos.sql
+│   ├── schema.sql
+│   └── catalogos.sql
 └── index.html
+```
 
 ---
 
@@ -158,8 +278,9 @@ Regresa el archivo de imagen directamente (no JSON). `nombre_archivo` es el valo
 
 | Método | Ruta | Descripción |
 |---|---|---|
-| `GET` | `/` | Verifica que la API está corriendo |
+| `GET` | `/` | Sirve el frontend (index.html) |
 | `GET` | `/salud-db` | Verifica que la conexión a la base de datos funciona |
+
 ## Paradigmas
 
 Esta sección explica qué paradigma se usó en cada parte del backend y por qué.
