@@ -10,11 +10,10 @@ Sistema de registro ciudadano de perros callejeros: los usuarios reportan un per
 
 ## Tecnologías usadas
 
-- **Backend:** Python 3, FastAPI, Uvicorn, SQLAlchemy (ORM), Pydantic, Pillow (validación de imágenes)
-- **Base de datos:** MySQL / MariaDB
-- **Frontend:** HTML, CSS, JavaScript, Leaflet.js para mapas
-- **Control de versiones:** Git + GitHub (ramas y Pull Requests)
-
+- **Backend:** [Python 3](https://www.python.org/downloads/) · [FastAPI](https://fastapi.tiangolo.com/) · [Uvicorn](https://www.uvicorn.org/) · [SQLAlchemy](https://www.sqlalchemy.org/) (ORM) · [Pydantic](https://docs.pydantic.dev/) · [Pillow](https://pypi.org/project/pillow/) (validación de imágenes)
+- **Base de datos:** [MySQL](https://dev.mysql.com/downloads/mysql/) / [MariaDB](https://mariadb.org/download/)
+- **Frontend:** HTML, CSS, JavaScript · [Leaflet.js](https://leafletjs.com/download.html) para mapas
+- **Control de versiones:** [Git](https://git-scm.com/downloads) + [GitHub](https://github.com/) (ramas y Pull Requests)
 ## Arquitectura
 
 El sistema sigue una arquitectura cliente-servidor de 3 capas:
@@ -75,27 +74,33 @@ Desde aquí, continúa con el paso **2 en adelante** de la sección "Instalació
    ```
    brew install python@3.11
    ```
+2. Crea una carpeta donde vas a guardar el proyecto y entra a ella:
+```
+   mkdir ~/Proyectos
+   cd ~/Proyectos
+```
 
-2. Clona el repositorio:
+3. Clona el repositorio:
    ```
    git clone https://github.com/Val-Bere/Proyecto-perritos.git
    cd Proyecto-perritos
    ```
    (Si no tienes Git, ve a la sección "Alternativa sin Git" más arriba.)
 
-3. Entra al backend, crea y activa el entorno virtual:
+4. Entra al backend, crea y activa el entorno virtual:
    ```
    cd backend
    python3 -m venv venv
    source venv/bin/activate
    ```
 
-4. Instala las dependencias:
+5. Instala las dependencias:
    ```
    pip install -r requirements.txt
    ```
+      > Este comando descarga automáticamente cada paquete listado en `requirements.txt` desde [PyPI](https://pypi.org/) (el repositorio oficial de paquetes de Python) — no necesitas descargarlos manualmente. Puedes ver la página de cada uno aquí: [fastapi](https://pypi.org/project/fastapi/), [uvicorn](https://pypi.org/project/uvicorn/), [sqlalchemy](https://pypi.org/project/SQLAlchemy/), [pydantic](https://pypi.org/project/pydantic/), [pillow](https://pypi.org/project/pillow/), [pymysql](https://pypi.org/project/PyMySQL/), [python-dotenv](https://pypi.org/project/python-dotenv/), [python-multipart](https://pypi.org/project/python-multipart/).
 
-5. Crea tu `.env` a partir del ejemplo y llena tus datos reales de MySQL:
+6. Crea tu `.env` a partir del ejemplo y llena tus datos reales de MySQL:
    ```
    cp .env.example .env
    ```
@@ -109,31 +114,37 @@ Desde aquí, continúa con el paso **2 en adelante** de la sección "Instalació
    ```
    > `RUTA_IMAGENES` debe estar fuera del proyecto para que las fotos no se suban al repositorio.
 
-6. Importa la base de datos (con MySQL instalado, por ejemplo vía [MySQL Community Server](https://dev.mysql.com/downloads/mysql/) o [MAMP](https://www.mamp.info/)):
+7. Importa la base de datos (con MySQL instalado, por ejemplo vía [MySQL Community Server](https://dev.mysql.com/downloads/mysql/) o [MAMP](https://www.mamp.info/)):
    ```
    mysql -u root -p perritos_db < ../database/schema.sql
    mysql -u root -p perritos_db < ../database/catalogos.sql
    ```
 
-7. Levanta el servidor:
+8. Levanta el servidor:
    ```
    uvicorn app.main:app --reload
    ```
 
-8. Abre `http://localhost:8000/` en tu navegador — ahí se sirve el frontend directamente desde el backend.
+9. Abre `http://localhost:8000/` en tu navegador — ahí se sirve el frontend directamente desde el backend.
 
 ### En Windows
 
 1. Instala Python 3.11+ desde [python.org](https://www.python.org/downloads/windows/) — marca la casilla **"Add python.exe to PATH"** durante la instalación.
 
-2. Clona el repositorio (con [Git para Windows](https://git-scm.com/download/win) instalado), usando la terminal PowerShell o Git Bash:
+2. Crea una carpeta donde vas a guardar el proyecto y entra a ella:
+```
+   mkdir C:\Proyectos
+   cd C:\Proyectos
+```
+
+3. Clona el repositorio (con [Git para Windows](https://git-scm.com/download/win) instalado), usando la terminal PowerShell o Git Bash:
    ```
    git clone https://github.com/Val-Bere/Proyecto-perritos.git
    cd Proyecto-perritos
    ```
    (Si no tienes Git, ve a la sección "Alternativa sin Git" más arriba.)
 
-3. Entra al backend, crea y activa el entorno virtual:
+4. Entra al backend, crea y activa el entorno virtual:
    ```
    cd backend
    python -m venv venv
@@ -141,29 +152,29 @@ Desde aquí, continúa con el paso **2 en adelante** de la sección "Instalació
    ```
    > En PowerShell, si aparece un error de permisos al activar, corre primero: `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass`
 
-4. Instala las dependencias:
+5. Instala las dependencias:
    ```
    pip install -r requirements.txt
    ```
 
-5. Crea tu `.env` a partir del ejemplo:
+6. Crea tu `.env` a partir del ejemplo:
    ```
    copy .env.example .env
    ```
    Y llena tus datos reales de MySQL (mismo formato que en macOS, ver arriba). Instala MySQL con el [MySQL Installer para Windows](https://dev.mysql.com/downloads/installer/) o usando [XAMPP](https://www.apachefriends.org/es/index.html), que incluye phpMyAdmin.
 
-6. Importa la base de datos (desde phpMyAdmin, importando los archivos directamente, o por línea de comandos si tienes `mysql` en el PATH):
+7. Importa la base de datos (desde phpMyAdmin, importando los archivos directamente, o por línea de comandos si tienes `mysql` en el PATH):
    ```
    mysql -u root -p perritos_db < ..\database\schema.sql
    mysql -u root -p perritos_db < ..\database\catalogos.sql
    ```
 
-7. Levanta el servidor:
+8. Levanta el servidor:
    ```
    uvicorn app.main:app --reload
    ```
 
-8. Abre `http://localhost:8000/` en tu navegador.
+9. Abre `http://localhost:8000/` en tu navegador.
 
 > **Nota:** el comando `cloudflared` para la demo desde celular (ver más abajo) también está disponible para Windows — se descarga desde la [página de releases de cloudflared](https://github.com/cloudflare/cloudflared/releases) en vez de usar `brew`.
 
