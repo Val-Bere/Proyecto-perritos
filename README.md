@@ -156,6 +156,7 @@ Desde aquí, continúa con el paso **2 en adelante** de la sección "Instalació
    ```
    pip install -r requirements.txt
    ```
+      > Este comando descarga automáticamente cada paquete listado en `requirements.txt` desde [PyPI](https://pypi.org/) (el repositorio oficial de paquetes de Python) — no necesitas descargarlos manualmente. Puedes ver la página de cada uno aquí: [fastapi](https://pypi.org/project/fastapi/), [uvicorn](https://pypi.org/project/uvicorn/), [sqlalchemy](https://pypi.org/project/SQLAlchemy/), [pydantic](https://pypi.org/project/pydantic/), [pillow](https://pypi.org/project/pillow/), [pymysql](https://pypi.org/project/PyMySQL/), [python-dotenv](https://pypi.org/project/python-dotenv/), [python-multipart](https://pypi.org/project/python-multipart/).
 
 6. Crea tu `.env` a partir del ejemplo:
    ```
