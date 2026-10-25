@@ -1,18 +1,27 @@
 defmodule Perritos.Datos do
   @moduledoc """
-  SHELL: de aquí salen los avistamientos.
+  SHELL: lee los perritos del backend del proyecto 1 (opción B del PDF)
+  y los convierte con el núcleo puro `Perritos.Convertidor`.
 
-  PENDIENTE: por ahora devuelve datos de ejemplo. Cuando el equipo defina
-  la conexión (BD directa con Postgrex/MyXQL o vía backend con Req), solo
-  hay que cambiar el cuerpo de `avistamientos/0`. El núcleo no se entera.
+  La dirección del backend sale de la variable de entorno BACKEND_URL.
   """
-  alias Perritos.Avistamiento
+  alias Perritos.Convertidor
 
   def avistamientos do
-    [
-      %Avistamiento{id: 1, nombre: "Max", raza: "pug", colores: ["café", "blanco"], fecha: ~N[2026-10-20 10:00:00]},
-      %Avistamiento{id: 2, nombre: "Luna", raza: nil, colores: ["negro"], fecha: ~N[2026-10-20 18:30:00]},
-      %Avistamiento{id: 3, nombre: "Rocky", raza: "criollo", colores: ["café"], fecha: ~N[2026-10-21 09:15:00]}
-    ]
+    base = System.get_env("BACKEND_URL") || "http://localhost:8000"
+
+    with {:ok, perritos} <- obtener(base <> "/perritos/"),
+         {:ok, razas} <- obtener(base <> "/catalogos/razas") do
+      razas_por_id = Map.new(razas, fn r -> {r["id"], r["nombre"]} end)
+      {:ok, Enum.map(perritos, &Convertidor.desde_api(&1, razas_por_id))}
+    end
+  end
+
+  defp obtener(url) do
+    case Req.get(url) do
+      {:ok, %{status: 200, body: cuerpo}} when is_list(cuerpo) -> {:ok, cuerpo}
+      {:ok, respuesta} -> {:error, {:respuesta_inesperada, respuesta.status}}
+      {:error, razon} -> {:error, {:sin_conexion, razon}}
+    end
   end
 end

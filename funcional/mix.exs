@@ -21,7 +21,8 @@ defmodule Perritos.MixProject do
     [
       {:plug, "~> 1.16"},
       {:bandit, "~> 1.5"},
-      {:jason, "~> 1.4"}
+      {:jason, "~> 1.4"},
+      {:req, "~> 0.5"}
     ]
   end
 end

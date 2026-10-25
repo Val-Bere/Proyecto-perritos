@@ -16,13 +16,19 @@ defmodule Perritos.Router do
     por = parsear_por(conn.query_params["por"])
     n = parsear_n(conn.query_params["n"])
 
-    resultado =
-      Datos.avistamientos()
-      |> Estadisticas.top(por, n)
-      # to_string: las claves de :dia son Date y JSON no sabe codificarlas
-      |> Enum.map(fn {clave, total} -> %{clave: to_string(clave), total: total} end)
+    case Datos.avistamientos() do
+      {:ok, avistamientos} ->
+        resultado =
+          avistamientos
+          |> Estadisticas.top(por, n)
+          # to_string: las claves de :dia son Date y JSON no sabe codificarlas
+          |> Enum.map(fn {clave, total} -> %{clave: to_string(clave), total: total} end)
 
-    mandar_json(conn, 200, resultado)
+        mandar_json(conn, 200, resultado)
+
+      {:error, _razon} ->
+        mandar_json(conn, 502, %{error: "no se pudo leer el backend"})
+    end
   end
 
   match _ do
