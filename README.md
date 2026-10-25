@@ -31,6 +31,76 @@ El sistema sigue una arquitectura cliente-servidor de 3 capas:
 
 El backend expone su documentación interactiva (Swagger UI) en `/docs`, generada automáticamente por FastAPI a partir de los esquemas Pydantic.
 
+### P2: el servicio Elixir y el proxy
+
+Para el Proyecto 2 se agregan tres piezas más, sin tocar el frontend ni el backend de arriba:
+
+```
+visitante ──► https://….trycloudflare.com
+                    │
+                    ▼
+              túnel (cloudflared)
+                    │
+                    ▼
+              proxy (nginx)
+              │ /            │ /f/
+              ▼               ▼
+      backend (sirve también   servicio Elixir (P2)
+      el frontend en "/")      lee los avistamientos
+              │                vía HTTP del backend
+              ▼                (Opción B, Req)
+          base de datos
+```
+
+El servicio Elixir (`funcional/`) obtiene los datos **a través del backend del P1** (Opción B): le pide `GET /perritos/` por HTTP con `Req` y convierte la respuesta a sus propios structs. No se conecta directo a la base de datos.
+
+## Docker: levantar todo el sistema (P2)
+
+Con esto nadie necesita instalar Python, Elixir ni MySQL en su máquina: todo corre en contenedores.
+
+1. **Requisitos:** Docker Desktop (Windows/macOS) o Docker Engine + plugin Compose (Linux). Comprobar con `docker --version` y `docker compose version`.
+2. **Configurar variables de entorno** (una sola vez):
+   ```
+   cp .env.example .env
+   ```
+   Y poner contraseñas propias en `DB_PASSWORD` y `DB_ROOT_PASSWORD` dentro de `.env` (ese archivo no se sube).
+3. **Bajar las dependencias de Elixir** (una sola vez, antes del primer build; genera `funcional/mix.lock`, que sí se sube al repo):
+   ```
+   docker compose run --rm herramientas mix local.hex --force
+   docker compose run --rm herramientas mix local.rebar --force
+   docker compose run --rm herramientas mix deps.get
+   ```
+4. **Levantar todo:**
+   ```
+   docker compose up --build
+   ```
+   Esto arranca, en este orden de dependencias: la base de datos (con las tablas y el catálogo ya cargados desde `database/schema.sql` y `database/catalogos.sql`), el backend, el servicio Elixir, el proxy nginx y el túnel de Cloudflare.
+5. **Probar en local**, en otra terminal:
+   ```
+   curl http://localhost:8080/f/salud        # debe responder: ok
+   curl http://localhost:8080/perritos/      # la API del P1, a través del proxy
+   ```
+   La app completa (frontend incluido) está en `http://localhost:8080`.
+6. **Obtener la URL pública del túnel:**
+   ```
+   docker compose logs tunel | grep trycloudflare
+   ```
+   Es un *quick tunnel*: no necesita cuenta de Cloudflare, pero la URL cambia cada vez que el contenedor del túnel se reinicia. El día de la demostración se levanta antes de clase y la URL vigente se comparte con el profesor.
+
+**Correr las pruebas del núcleo de Elixir** (no necesita que nada esté levantado):
+```
+docker compose run --rm herramientas mix test
+```
+
+**Problemas comunes:**
+
+| Síntoma | Causa | Solución |
+|---|---|---|
+| `mix test` falla pidiendo variables de entorno | Las pruebas intentaron arrancar la aplicación | El alias `test: "test --no-start"` ya está en `funcional/mix.exs`; no se necesita nada extra |
+| El build de `funcional` falla en `COPY mix.lock` | Falta `funcional/mix.lock` | Correr el paso 3 (`mix deps.get`) antes del primer `docker compose up --build` |
+| `/f/...` responde 404 desde el navegador pero `/f/salud` con `curl` funciona | Se perdió el prefijo `/f` en la ruta del proxy | En `Perritos.Router` las rutas se escriben completas, con `/f/...`, porque el proxy lo conserva |
+| "hoy"/"ayer" salen corridos por unas horas | El contenedor está en UTC | Ya se fija `TZ: America/Monterrey` en `docker-compose.yml` y se instala `tzdata` en el `Dockerfile` de `funcional/` |
+
 ## Requisitos del sistema y versiones
 
 | Software | Versión usada / mínima | Notas |

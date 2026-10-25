@@ -1,0 +1,16 @@
+# Entornos y secretos
+.env
+venv/
+__pycache__/
+*.pyc
+
+# Elixir (funcional/)
+funcional/deps/
+funcional/_build/
+funcional/doc/
+funcional/*.ez
+funcional/erl_crash.dump
+funcional/.elixir_ls/
+
+# Imágenes subidas en desarrollo local (fuera de Docker)
+imagenes_perritos/
