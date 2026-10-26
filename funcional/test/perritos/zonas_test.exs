@@ -27,8 +27,9 @@ defmodule Perritos.ZonasTest do
   end
 
   test "agrupa perros cercanos en la misma celda y ordena de mayor a menor" do
-    p1 = perro(1, 25.4231, -101.0021)
-    p2 = perro(2, 25.4232, -101.0022)
+    # Ambos caen en la misma celda de 500 m (lejos de cualquier borde)
+    p1 = perro(1, 25.4231, -101.0000)
+    p2 = perro(2, 25.4232, -100.9995)
     p3 = perro(3, 25.4500, -101.0300)
 
     zonas = Zonas.concentracion([p1, p2, p3], 500)

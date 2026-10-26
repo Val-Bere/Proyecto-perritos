@@ -38,7 +38,7 @@ defmodule Perritos.Router do
     end
   end
 
-get "/f/zonas" do
+  get "/f/zonas" do
     conn = fetch_query_params(conn)
     metros = parsear_entero(conn.query_params["metros"], 500)
     minimo = parsear_entero(conn.query_params["minimo"], 1)
@@ -65,7 +65,7 @@ get "/f/zonas" do
     send_resp(conn, 404, "no encontrado")
   end
 
-defp parsear_entero(nil, defecto), do: defecto
+  defp parsear_entero(nil, defecto), do: defecto
 
   defp parsear_entero(texto, defecto) do
     case Integer.parse(texto) do
@@ -73,5 +73,4 @@ defp parsear_entero(nil, defecto), do: defecto
       _ -> defecto
     end
   end
-
 end
