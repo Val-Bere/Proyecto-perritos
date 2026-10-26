@@ -38,7 +38,8 @@ defmodule Perritos.Router do
     end
   end
 
-  # Funcionalidad 3 (Estadísticas): GET /f/estadisticas?por=color|raza|dia&n=5
+
+# Funcionalidad 3 (Estadísticas): GET /f/estadisticas?por=color|raza|dia&n=5
   # Cáscara: lee la petición -> trae datos -> llama al núcleo -> responde JSON.
   get "/f/estadisticas" do
     conn = Plug.Conn.fetch_query_params(conn)
@@ -60,6 +61,28 @@ defmodule Perritos.Router do
       {:error, _razon} ->
         send_resp(conn, 503, ~s({"error": "backend no disponible"}))
     end
+  end  
+  get "/f/zonas" do
+    conn = fetch_query_params(conn)
+    metros = parsear_entero(conn.query_params["metros"], 500)
+    minimo = parsear_entero(conn.query_params["minimo"], 1)
+
+    case Perritos.Datos.avistamientos() do
+      {:ok, avistamientos} ->
+        cuerpo =
+          avistamientos
+          |> Perritos.Zonas.concentracion(metros, minimo)
+          |> Jason.encode!()
+
+        conn
+        |> put_resp_content_type("application/json")
+        |> send_resp(200, cuerpo)
+
+      {:error, _} ->
+        conn
+        |> put_resp_content_type("application/json")
+        |> send_resp(503, ~s({"error":"base de datos no disponible"}))
+    end
   end
 
   match _ do
@@ -76,6 +99,14 @@ defmodule Perritos.Router do
     case Integer.parse(texto) do
       {n, ""} when n >= 0 -> n
       _ -> 5
+    end
+  end   
+  defp parsear_entero(nil, defecto), do: defecto
+
+  defp parsear_entero(texto, defecto) do
+    case Integer.parse(texto) do
+      {numero, ""} when numero > 0 -> numero
+      _ -> defecto
     end
   end
 end
