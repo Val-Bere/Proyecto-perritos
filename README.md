@@ -87,6 +87,12 @@ Con esto nadie necesita instalar Python, Elixir ni MySQL en su máquina: todo co
    ```
    Es un *quick tunnel*: no necesita cuenta de Cloudflare, pero la URL cambia cada vez que el contenedor del túnel se reinicia. El día de la demostración se levanta antes de clase y la URL vigente se comparte con el profesor.
 
+**Datos de muestra.** La primera vez que se crea la base se cargan además 124 avistamientos de prueba (`database/seed_avistamientos.sql`, repartidos por Saltillo en los últimos ~2 meses, con algunos posibles duplicados cercanos). Todos usan la foto de relleno `database/sin-foto.jpg`. Los scripts de `docker-entrypoint-initdb.d` sólo corren con el volumen vacío; para recargar la base desde cero:
+```
+docker compose down -v
+docker compose up --build
+```
+
 **Correr las pruebas del núcleo de Elixir** (no necesita que nada esté levantado):
 ```
 docker compose run --rm herramientas mix test
@@ -424,3 +430,27 @@ Para probar cámara y geolocalización desde un teléfono (requieren HTTPS):
 3. Abre en el celular la URL `https://....trycloudflare.com` que se genera.
 
 > Nota: la URL cambia cada vez que se vuelve a correr el túnel.
+
+
+## Del P1 al P2
+
+**Qué había al terminar el P1:** frontend (`index.html`, con mapa Leaflet), backend FastAPI + SQLAlchemy que también sirve el frontend, y base MySQL/MariaDB con perritos, razas y colores.
+
+**Qué se agregó en el P2:**
+- `funcional/`: servicio Elixir (Plug + Bandit + Jason + Req) con la cáscara lista (`router.ex`, `datos.ex`, `avistamiento.ex`) y `/f/salud`. Lee los avistamientos del backend del P1 (Opción B).
+- `docker-compose.yml`, `backend/Dockerfile`, `funcional/Dockerfile`: todo el sistema con un solo comando.
+- `proxy/nginx.conf`: única puerta de entrada (`/` → backend, `/f/` → servicio Elixir).
+- Servicio `tunel` (Cloudflare) para publicar la app.
+- `database/seed_avistamientos.sql` y `database/sin-foto.jpg`: datos de muestra.
+
+**Qué se modificó del P1:** nada del backend ni del frontend por la infraestructura; el backend sólo se empaquetó en Docker (se conserva su ruta `/` y las demás sin prefijo).
+
+## Funcionalidades del P2 (por integrante)
+
+| Integrante | Funcionalidad | Issue | Rama | Endpoint |
+|---|---|---|---|---|
+| Valery Alvarado | _por definir_ | _#_ | _rama_ | `/f/...` |
+| Marisol Hernández | _por definir_ | _#_ | _rama_ | `/f/...` |
+| Alma Bujanda | _por definir_ | _#_ | _rama_ | `/f/...` |
+
+> Completar cuando se registren las funcionalidades con el profesor. Por cada una documentar: qué hace, cómo se usa en la app, método/ruta/ejemplo de respuesta y dónde están en el código el núcleo puro, el orden superior y la recursión.
