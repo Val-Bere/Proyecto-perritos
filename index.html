@@ -267,6 +267,24 @@
             padding: 6px 14px; border-radius: 8px; font-size: 0.85rem;
             font-weight: 600; cursor: pointer; font-family: inherit;
         }
+
+        /* ============ VISTA: ESTADÍSTICAS (Funcionalidad 3) ============ */
+        .est-controles {
+            display: flex; flex-wrap: wrap; gap: 14px; align-items: end;
+            margin-bottom: 18px;
+        }
+        .est-controles label { font-size: 0.85rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px; }
+        .est-controles select {
+            padding: 10px 12px; border: 2px solid var(--border-color); border-radius: 10px;
+            font-family: inherit; font-size: 0.95rem; background: #fff; color: var(--text-main);
+        }
+        .est-fila { display: grid; grid-template-columns: 130px 1fr 44px; gap: 10px; align-items: center; margin-bottom: 10px; }
+        .est-nombre { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .est-nombre::first-letter { text-transform: uppercase; }
+        .est-barra-fondo { background: var(--primary-light); border-radius: 8px; height: 22px; overflow: hidden; }
+        .est-barra { background: var(--primary); height: 100%; border-radius: 8px; transition: width 0.4s ease; }
+        .est-total { font-weight: 700; color: var(--primary); text-align: right; }
+        @media (max-width: 520px) { .est-fila { grid-template-columns: 90px 1fr 36px; } }
     </style>
 </head>
 <body>
@@ -278,6 +296,7 @@
             <button data-vista="registro" class="activo">Registrar</button>
             <button data-vista="mapa">Mapa</button>
             <button data-vista="lista">Lista</button>
+            <button data-vista="estadisticas">Estadísticas</button>
         </nav>
     </header>
 
@@ -359,6 +378,32 @@
             <p id="estadoLista" class="estado" style="display:none;"></p>
         </section>
 
+        <!-- ============ VISTA: ESTADÍSTICAS ============ -->
+        <section id="vista-estadisticas" class="vista">
+            <div class="card">
+                <div class="est-controles">
+                    <div>
+                        <label for="estPor">Agrupar por</label>
+                        <select id="estPor">
+                            <option value="color">Color</option>
+                            <option value="raza">Raza</option>
+                            <option value="dia">Día de registro</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="estN">Mostrar</label>
+                        <select id="estN">
+                            <option value="3">Top 3</option>
+                            <option value="5" selected>Top 5</option>
+                            <option value="10">Top 10</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="estResultado"></div>
+                <p id="estadoEstadisticas" class="estado" style="display:none;"></p>
+            </div>
+        </section>
+
         <!-- ============ VISTA: DETALLE ============ -->
         <section id="vista-detalle" class="vista">
             <button class="btn-volver" id="btnVolver">← Volver</button>
@@ -393,6 +438,9 @@
             }
             if (nombre === 'lista') {
                 cargarLista();
+            }
+            if (nombre === 'estadisticas') {
+                cargarEstadisticas();
             }
             if (nombre === 'registro') {
                 setTimeout(() => mapRegistro.invalidateSize(), 50);
@@ -721,6 +769,64 @@
         }
 
         // ======================================================
+        // 6b. ESTADÍSTICAS (Funcionalidad 3)
+        //     Consume GET /f/estadisticas?por=color|raza|dia&n=5 del servicio Elixir
+        //     (el proxy lo manda a /f/ -> servicio funcional).
+        // ======================================================
+        async function cargarEstadisticas() {
+            const por = document.getElementById('estPor').value;
+            const n = document.getElementById('estN').value;
+            const contenedor = document.getElementById('estResultado');
+            const estado = document.getElementById('estadoEstadisticas');
+            estado.style.display = 'none';
+
+            try {
+                const res = await fetch(`${API_BASE}/f/estadisticas?por=${encodeURIComponent(por)}&n=${encodeURIComponent(n)}`);
+                if (!res.ok) throw new Error('Respuesta no válida del servicio');
+                const datos = await res.json(); // [{clave, total}, ...] ya ordenado de mayor a menor
+
+                contenedor.replaceChildren();
+                if (datos.length === 0) {
+                    estado.textContent = 'Todavía no hay avistamientos para mostrar estadísticas.';
+                    estado.style.display = 'block';
+                    return;
+                }
+
+                const maximo = Math.max(...datos.map(d => d.total));
+                datos.forEach(d => {
+                    const fila = document.createElement('div');
+                    fila.className = 'est-fila';
+
+                    const nombre = document.createElement('div');
+                    nombre.className = 'est-nombre';
+                    nombre.textContent = d.clave.replaceAll('_', ' ');
+
+                    const fondo = document.createElement('div');
+                    fondo.className = 'est-barra-fondo';
+                    const barra = document.createElement('div');
+                    barra.className = 'est-barra';
+                    barra.style.width = (d.total / maximo * 100) + '%';
+                    fondo.appendChild(barra);
+
+                    const total = document.createElement('div');
+                    total.className = 'est-total';
+                    total.textContent = d.total;
+
+                    fila.append(nombre, fondo, total);
+                    contenedor.appendChild(fila);
+                });
+            } catch (error) {
+                console.warn('No se pudieron cargar las estadísticas:', error);
+                contenedor.replaceChildren();
+                estado.textContent = 'No se pudo conectar con el servicio de estadísticas. Intenta de nuevo más tarde.';
+                estado.style.display = 'block';
+            }
+        }
+
+        document.getElementById('estPor').addEventListener('change', cargarEstadisticas);
+        document.getElementById('estN').addEventListener('change', cargarEstadisticas);
+
+        // ======================================================
         // 7. DETALLE
         // ======================================================
         async function cargarDetalle(id) {
@@ -768,4 +874,4 @@
         }
     </script>
 </body>
-</html>
+</html> 
