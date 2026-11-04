@@ -85,6 +85,32 @@ defmodule Perritos.Router do
     end
   end
 
+  # Funcionalidad 7 (Perros perdidos de vista): GET /f/perdidos?dias=14&metros=1000
+  # Cáscara: lee la petición y el reloj -> trae datos -> llama al núcleo -> responde JSON.
+  get "/f/perdidos" do
+    conn = fetch_query_params(conn)
+    dias = parsear_entero(conn.query_params["dias"], 14)
+    metros = parsear_entero(conn.query_params["metros"], 1000)
+    ahora = NaiveDateTime.local_now()
+
+    case Perritos.Datos.avistamientos() do
+      {:ok, avistamientos} ->
+        cuerpo =
+          avistamientos
+          |> Perritos.Analisis.perdidos_por_zona(dias, ahora, metros)
+          |> Jason.encode!()
+
+        conn
+        |> put_resp_content_type("application/json")
+        |> send_resp(200, cuerpo)
+
+      {:error, _razon} ->
+        conn
+        |> put_resp_content_type("application/json")
+        |> send_resp(503, ~s({"error":"backend no disponible"}))
+    end
+  end
+
   match _ do
     send_resp(conn, 404, "no encontrado")
   end
