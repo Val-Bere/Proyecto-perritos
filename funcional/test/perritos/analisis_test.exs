@@ -98,4 +98,9 @@ defmodule Perritos.AnalisisTest do
 
     assert [%{cantidad: 1, perros: [%{id: 2}]}] = zonas
   end
+
+  test "verificacion extra de integracion de analisis" do
+  assert is_list(Analisis.perdidos([], 10, @ahora))
+end
+
 end
