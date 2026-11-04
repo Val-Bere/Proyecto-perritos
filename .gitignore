@@ -14,3 +14,8 @@ funcional/.elixir_ls/
 
 # Imágenes subidas en desarrollo local (fuera de Docker)
 imagenes_perritos/
+
+# Nunca subir instalaciones de Elixir/Erlang ni sus zips (se usa la imagen de Docker)
+funcional/elixir-*/
+funcional/elixir-*.zip*
+funcional/*.zip
