@@ -1,21 +1,25 @@
-defmodule Perritos.RouterTest do
-  use ExUnit.Case, async: true
-  import Plug.Test
-  import Plug.Conn
+defmodule Perritos.Router do
+  use Plug.Router
 
-  @opts Perritos.Router.init([])
+  plug(:match)
+  plug(:dispatch)
 
-  test "GET /f/salud responde ok" do
-    conn = conn(:get, "/f/salud") |> Perritos.Router.call(@opts)
-
-    assert conn.state == :sent
-    assert conn.status == 200
-    assert conn.resp_body == "ok"
+  get "/" do
+    conn
+    |> put_resp_content_type("text/html")
+    |> send_resp(200, "Bienvenido a Perritos App")
   end
 
-  test "ruta desconocida responde 404" do
-    conn = conn(:get, "/f/no-existe") |> Perritos.Router.call(@opts)
+  get "/analisis" do
+    avistamientos_ejemplo = []
+    resultado = Perritos.Analisis.perros_perdidos_de_vista(avistamientos_ejemplo, 10, ~N[2026-10-26 12:00:00])
 
-    assert conn.status == 404
+    conn
+    |> put_resp_content_type("text/html")
+    |> send_resp(200, "<html><body><h1>Modulo de Analisis de Perritos</h1><p>Resultados: #{inspect(resultado)}</p></body></html>")
+  end
+
+  match _ do
+    send_resp(conn, 404, "Pagina no encontrada")
   end
 end

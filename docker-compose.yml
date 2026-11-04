@@ -2,10 +2,8 @@ services:
   bd:
     image: mariadb:10.11
     environment:
-      MYSQL_DATABASE: ${DB_NAME}
-      MYSQL_USER: ${DB_USER}
-      MYSQL_PASSWORD: ${DB_PASSWORD}
-      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_DATABASE: perritos_db
+      MYSQL_ROOT_PASSWORD: rootpassword
     volumes:
       - db_data:/var/lib/mysql
       # Se cargan en orden alfabético la primera vez que el volumen está
@@ -41,6 +39,8 @@ services:
 
   funcional:
     build: ./funcional
+    ports:
+      - "4000:4000"
     environment:
       BACKEND_URL: http://backend:8000
       TZ: ${TZ:-America/Monterrey}
