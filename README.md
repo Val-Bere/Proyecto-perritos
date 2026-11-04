@@ -439,21 +439,20 @@ Para probar cámara y geolocalización desde un teléfono (requieren HTTPS):
 **Qué se agregó en el P2:**
 - `funcional/`: servicio Elixir (Plug + Bandit + Jason + Req) con la cáscara lista (`router.ex`, `datos.ex`, `avistamiento.ex`) y `/f/salud`. Lee los avistamientos del backend del P1 (Opción B).
 - `docker-compose.yml`, `backend/Dockerfile`, `funcional/Dockerfile`: todo el sistema con un solo comando.
+- Tres funcionalidades en Elixir, una por integrante: Estadísticas (`/f/estadisticas`), Zonas de concentración (`/f/zonas`) y Perros perdidos de vista (`/f/perdidos`), cada una con su pestaña en el frontend (`index.html`).
 - `proxy/nginx.conf`: única puerta de entrada (`/` → backend, `/f/` → servicio Elixir).
 - Servicio `tunel` (Cloudflare) para publicar la app.
 - `database/seed_avistamientos.sql` y `database/sin-foto.jpg`: datos de muestra.
 
-**Qué se modificó del P1:** nada del backend ni del frontend por la infraestructura; el backend sólo se empaquetó en Docker (se conserva su ruta `/` y las demás sin prefijo).
+**Qué se modificó del P1:** el backend no cambió (sólo se empaquetó en Docker; conserva su ruta `/` y las demás sin prefijo). El frontend (`index.html`) ganó tres pestañas nuevas: Estadísticas, Zonas y Perdidos, cada una en commits que mencionan el issue de su autora.
 
 ## Funcionalidades del P2 (por integrante)
 
 | Integrante | Funcionalidad | Issue | Rama | Endpoint |
 |---|---|---|---|---|
-| Valery Alvarado | _por definir_ | _#_ | _rama_ | `/f/...` |
+| Valery Alvarado | Zonas de concentración: cuadrícula de la ciudad con el conteo de perros por celda | #13 | `feat/zonas-concentracion` (núcleo y ruta), `revision-2-integracion` (pestaña) | `GET /f/zonas` |
 | Marisol Hernández | Estadísticas: los más comunes por color, raza o día | #7 | `estadisticas-7-v2` (núcleo y ruta), `estadisticas-frontend` (pestaña) | `GET /f/estadisticas` |
-| Alma Bujanda | _por definir_ | _#_ | _rama_ | `/f/...` |
-
-> Completar cuando se registren las funcionalidades con el profesor. Por cada una documentar: qué hace, cómo se usa en la app, método/ruta/ejemplo de respuesta y dónde están en el código el núcleo puro, el orden superior y la recursión.
+| Alma Bujanda | Perros perdidos de vista: sin reportarse en N días, agrupados por zona | #14 | `feature/funcionalidad-7-perros-perdidos` (primera versión del filtro), `revision-2-integracion` (integración, endpoint y pestaña) | `GET /f/perdidos` |
 
 ### Estadísticas (Marisol Hernández, issue #7)
 
@@ -490,3 +489,94 @@ Si el backend del P1 no responde, devuelve `503` con `{"error": "backend no disp
 | Frontend | `index.html` (pestaña `estadisticas`, función `cargarEstadisticas`) |
 
 **Cómo probarla.** `docker compose run --rm herramientas mix test` o, con todo levantado, abrir `http://localhost:8080/f/estadisticas?por=color&n=3`.
+
+### Zonas de concentración (Valery Alvarado, issue #13)
+
+**Qué hace.** Divide la ciudad en una cuadrícula de celdas de N metros y cuenta cuántos perros hay en cada una. Cada zona regresa su conteo, su nivel (`baja`: 1 perro, `media`: 2 a 4, `alta`: 5 o más), su centro y sus límites, para que el frontend sólo tenga que pintarla.
+
+**Cómo se usa en la app.** Pestaña **Zonas**: se elige el tamaño de la celda (250 m, 500 m, 1 km o 2 km) y el mínimo de perros por zona. Las zonas aparecen como rectángulos en el mapa, coloreados por nivel y con el número de perros al centro; al tocar uno se ve el detalle.
+
+**Endpoint.** `GET /f/zonas?metros=1000&minimo=1` (por defecto `metros=500` y `minimo=1`; un valor inválido usa el valor por defecto). Las zonas con más perros van primero.
+
+Ejemplo (recortado a la primera zona de `/f/zonas?metros=1000&minimo=5`):
+
+```json
+[
+  {
+    "celda": {"fila": 2823, "col": -11209},
+    "cantidad": 8,
+    "nivel": "alta",
+    "centro": {"lat": 25.436912, "lon": -100.977376},
+    "limites": {"lat_min": 25.432407, "lat_max": 25.441416, "lon_min": -100.981881, "lon_max": -100.972872}
+  }
+]
+```
+
+Si el backend del P1 no responde, devuelve `503`.
+
+**Dónde está en el código.**
+
+| Requisito | Archivo y función |
+|---|---|
+| Núcleo puro | `funcional/lib/perritos/zonas.ex` (`Perritos.Zonas`) |
+| Cáscara (ruta) | `funcional/lib/perritos/router.ex` (`get "/f/zonas"`) |
+| Orden superior (regresa función) | `proyeccion_celda/1` |
+| Orden superior (recibe función) | `contar_por_celda/2` |
+| Recursión explícita | `filtrar_por_minimo/2` |
+| Pattern matching y cláusulas múltiples | `extraer_coordenadas/1`, `nivel_concentracion/1`, `metros_a_grados/1` |
+| Composición con `\|>` | `concentracion/3` |
+| `Stream` | `contar_por_celda/2` (`Stream.map` y `Stream.filter` antes del `Enum.reduce`) |
+| Pruebas | `funcional/test/perritos/zonas_test.exs` (6 pruebas y doctests, con casos borde) |
+| Frontend | `index.html` (pestaña `zonas`, función `cargarZonas`) |
+
+### Perros perdidos de vista (Alma Bujanda, issue #14)
+
+**Qué hace.** Encuentra los avistamientos que llevan N días o más sin reportarse (días de calendario, visto desde hoy), los ordena del más antiguo al más reciente y los agrupa por zona de la misma cuadrícula de la funcionalidad de zonas.
+
+**Cómo se usa en la app.** Pestaña **Perdidos**: se elige cuántos días sin reportarse (7, 14, 30 o 45) y el tamaño de las zonas. Aparece un mapa con las zonas y los perros, y debajo una tarjeta por zona con la lista de perros (nombre, hace cuántos días se vio por última vez y un botón **Ver detalle**).
+
+**Endpoint.** `GET /f/perdidos?dias=14&metros=1000` (por defecto `dias=14` y `metros=1000`). La fecha de "hoy" la lee el router, no el núcleo. Las zonas con más perros perdidos van primero.
+
+Ejemplo (recortado, `/f/perdidos?dias=45&metros=2000`):
+
+```json
+[
+  {
+    "celda": {"fila": 1410, "col": -5606},
+    "cantidad": 3,
+    "nivel": "media",
+    "centro": {"lat": 25.414389, "lon": -100.999899},
+    "limites": {"lat_min": 25.40538, "lat_max": 25.423398, "lon_min": -101.008908, "lon_max": -100.99089},
+    "perros": [
+      {"id": 106, "nombre": "Kira", "lat": 25.4222794, "lon": -100.9972849,
+       "foto": "sin-foto.jpg", "fecha": "2026-08-31T13:34:00", "dias_sin_ver": 64}
+    ]
+  }
+]
+```
+
+Si el backend del P1 no responde, devuelve `503`.
+
+**Dónde está en el código.**
+
+| Requisito | Archivo y función |
+|---|---|
+| Núcleo puro | `funcional/lib/perritos/analisis.ex` (`Perritos.Analisis`) |
+| Cáscara (ruta y reloj) | `funcional/lib/perritos/router.ex` (`get "/f/perdidos"`) |
+| Orden superior (regresa función) | `perdido_desde/2` |
+| Orden superior (recibe función) | `filtrar/2` y `ordenar/2` |
+| Recursión explícita | `filtrar/2` |
+| Pattern matching y cláusulas múltiples | `dias_sin_ver/2`, `es_perdido/2`, `incluir/3`, `celda_de/2`, `armar_zona/2` |
+| Composición con `\|>` | `perdidos/3`, `por_zona/3`, `perdidos_por_zona/4` |
+| Pruebas | `funcional/test/perritos/analisis_test.exs` (10 pruebas y doctests, con casos borde) |
+| Frontend | `index.html` (pestaña `perdidos`, función `cargarPerdidos`) |
+
+La primera versión del filtro y el ordenamiento es de Alma (rama `feature/funcionalidad-7-perros-perdidos`); se integró al esqueleto, se le agregó la agrupación por zona (reutiliza `Perritos.Zonas`), el endpoint y las pruebas.
+
+## Cómo correr las pruebas
+
+```
+docker compose run --rm herramientas mix test
+```
+
+Corre las pruebas de las tres funcionalidades (zonas, estadísticas y perros perdidos) y las del router. No necesita base de datos ni servidor levantado.
