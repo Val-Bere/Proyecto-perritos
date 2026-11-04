@@ -285,6 +285,38 @@
         .est-barra { background: var(--primary); height: 100%; border-radius: 8px; transition: width 0.4s ease; }
         .est-total { font-weight: 700; color: var(--primary); text-align: right; }
         @media (max-width: 520px) { .est-fila { grid-template-columns: 90px 1fr 36px; } }
+
+        /* Zonas de concentración y perros perdidos (Funcionalidades 4 y 7) */
+        #mapZonas, #mapPerdidos {
+            width: 100%; height: 420px; border-radius: 12px;
+            border: 2px solid var(--border-color);
+        }
+        .zona-resumen { font-size: 0.95rem; color: var(--text-muted); margin-bottom: 10px; min-height: 1.2em; }
+        .zona-leyenda { display: flex; flex-wrap: wrap; gap: 16px; font-size: 0.85rem; color: var(--text-muted); margin-top: 12px; }
+        .zona-leyenda span::before {
+            content: ''; display: inline-block; width: 12px; height: 12px;
+            border-radius: 3px; margin-right: 6px; vertical-align: -1px; background: var(--c);
+        }
+        .zona-etiqueta {
+            background: #fff; color: var(--primary); border: 2px solid var(--primary);
+            border-radius: 50%; width: 26px; height: 26px; line-height: 22px;
+            text-align: center; font-weight: 700; font-size: 0.8rem;
+        }
+        .perd-zona {
+            border: 1px solid var(--border-color); border-radius: 12px;
+            padding: 14px 16px; margin-top: 14px; background: #fff;
+        }
+        .perd-zona h3 { color: var(--primary); font-size: 1rem; margin-bottom: 6px; }
+        .perd-fila {
+            display: flex; justify-content: space-between; align-items: center;
+            gap: 10px; padding: 8px 0; border-top: 1px solid var(--primary-light);
+        }
+        .perd-fila small { color: var(--text-muted); display: block; }
+        .perd-fila button {
+            background: var(--primary); color: #fff; border: none; border-radius: 8px;
+            padding: 6px 12px; font-family: inherit; font-weight: 600; cursor: pointer;
+        }
+        .perd-fila button:hover { background: var(--primary-hover); }
     </style>
 </head>
 <body>
@@ -297,6 +329,8 @@
             <button data-vista="mapa">Mapa</button>
             <button data-vista="lista">Lista</button>
             <button data-vista="estadisticas">Estadísticas</button>
+            <button data-vista="zonas">Zonas</button>
+            <button data-vista="perdidos">Perdidos</button>
         </nav>
     </header>
 
@@ -404,6 +438,69 @@
             </div>
         </section>
 
+        <!-- ============ VISTA: ZONAS DE CONCENTRACIÓN (Funcionalidad 4) ============ -->
+        <section id="vista-zonas" class="vista">
+            <div class="card">
+                <div class="est-controles">
+                    <div>
+                        <label for="zonaMetros">Tamaño de la celda</label>
+                        <select id="zonaMetros">
+                            <option value="250">250 m</option>
+                            <option value="500">500 m</option>
+                            <option value="1000" selected>1 km</option>
+                            <option value="2000">2 km</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="zonaMinimo">Mínimo de perros</label>
+                        <select id="zonaMinimo">
+                            <option value="1" selected>1 o más</option>
+                            <option value="2">2 o más</option>
+                            <option value="3">3 o más</option>
+                            <option value="5">5 o más</option>
+                        </select>
+                    </div>
+                </div>
+                <p id="zonaResumen" class="zona-resumen"></p>
+                <div id="mapZonas"></div>
+                <div class="zona-leyenda">
+                    <span style="--c:#a78bfa">Baja (1 perro)</span>
+                    <span style="--c:#f59e0b">Media (2 a 4)</span>
+                    <span style="--c:#dc2626">Alta (5 o más)</span>
+                </div>
+                <p id="estadoZonas" class="estado" style="display:none;"></p>
+            </div>
+        </section>
+
+        <!-- ============ VISTA: PERROS PERDIDOS DE VISTA (Funcionalidad 7) ============ -->
+        <section id="vista-perdidos" class="vista">
+            <div class="card">
+                <div class="est-controles">
+                    <div>
+                        <label for="perdDias">Sin reportarse en</label>
+                        <select id="perdDias">
+                            <option value="7">7 días o más</option>
+                            <option value="14" selected>14 días o más</option>
+                            <option value="30">30 días o más</option>
+                            <option value="45">45 días o más</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="perdMetros">Agrupar por zonas de</label>
+                        <select id="perdMetros">
+                            <option value="500">500 m</option>
+                            <option value="1000" selected>1 km</option>
+                            <option value="2000">2 km</option>
+                        </select>
+                    </div>
+                </div>
+                <p id="perdResumen" class="zona-resumen"></p>
+                <div id="mapPerdidos"></div>
+                <div id="perdLista"></div>
+                <p id="estadoPerdidos" class="estado" style="display:none;"></p>
+            </div>
+        </section>
+
         <!-- ============ VISTA: DETALLE ============ -->
         <section id="vista-detalle" class="vista">
             <button class="btn-volver" id="btnVolver">← Volver</button>
@@ -441,6 +538,12 @@
             }
             if (nombre === 'estadisticas') {
                 cargarEstadisticas();
+            }
+            if (nombre === 'zonas') {
+                setTimeout(() => { mapZonas.invalidateSize(); cargarZonas(); }, 50);
+            }
+            if (nombre === 'perdidos') {
+                setTimeout(() => { mapPerdidos.invalidateSize(); cargarPerdidos(); }, 50);
             }
             if (nombre === 'registro') {
                 setTimeout(() => mapRegistro.invalidateSize(), 50);
@@ -825,6 +928,160 @@
 
         document.getElementById('estPor').addEventListener('change', cargarEstadisticas);
         document.getElementById('estN').addEventListener('change', cargarEstadisticas);
+
+        // ======================================================
+        // 6c. ZONAS DE CONCENTRACIÓN (Funcionalidad 4)
+        //     Consume GET /f/zonas?metros=1000&minimo=1 del servicio Elixir.
+        //     El servicio ya regresa los límites de cada celda: aquí sólo se pintan.
+        // ======================================================
+        const URL_TILES = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}';
+        const COLOR_NIVEL = { baja: '#a78bfa', media: '#f59e0b', alta: '#dc2626' };
+        const TEXTO_NIVEL = { baja: 'concentración baja', media: 'concentración media', alta: 'concentración alta' };
+
+        const mapZonas = L.map('mapZonas').setView([25.4237, -101.0053], 12);
+        L.tileLayer(URL_TILES, { maxZoom: 19, attribution: 'Tiles © Esri' }).addTo(mapZonas);
+        const capaZonas = L.featureGroup().addTo(mapZonas);
+
+        async function cargarZonas() {
+            const metros = document.getElementById('zonaMetros').value;
+            const minimo = document.getElementById('zonaMinimo').value;
+            const resumen = document.getElementById('zonaResumen');
+            const estado = document.getElementById('estadoZonas');
+            estado.style.display = 'none';
+
+            try {
+                const res = await fetch(`${API_BASE}/f/zonas?metros=${encodeURIComponent(metros)}&minimo=${encodeURIComponent(minimo)}`);
+                if (!res.ok) throw new Error('Respuesta no válida del servicio');
+                const zonas = await res.json();
+
+                capaZonas.clearLayers();
+                if (zonas.length === 0) {
+                    resumen.textContent = '';
+                    estado.textContent = 'No hay zonas con esos filtros. Prueba con una celda más grande o menos mínimo.';
+                    estado.style.display = 'block';
+                    return;
+                }
+
+                const totalPerros = zonas.reduce((suma, z) => suma + z.cantidad, 0);
+                resumen.textContent = `${zonas.length} ${zonas.length === 1 ? 'zona' : 'zonas'} · ${totalPerros} ${totalPerros === 1 ? 'perrito contado' : 'perritos contados'}`;
+
+                zonas.forEach(z => {
+                    const l = z.limites;
+                    const rect = L.rectangle([[l.lat_min, l.lon_min], [l.lat_max, l.lon_max]], {
+                        color: COLOR_NIVEL[z.nivel], weight: 1, fillOpacity: 0.35
+                    });
+                    rect.bindPopup(`<b>${z.cantidad}</b> perrito(s) en esta zona<br>${TEXTO_NIVEL[z.nivel] || ''}`);
+                    capaZonas.addLayer(rect);
+
+                    const etiqueta = L.marker([z.centro.lat, z.centro.lon], {
+                        icon: L.divIcon({ className: '', html: `<div class="zona-etiqueta">${Number(z.cantidad)}</div>`, iconSize: [26, 26] }),
+                        interactive: false
+                    });
+                    capaZonas.addLayer(etiqueta);
+                });
+                mapZonas.fitBounds(capaZonas.getBounds(), { padding: [20, 20] });
+            } catch (error) {
+                console.warn('No se pudieron cargar las zonas:', error);
+                capaZonas.clearLayers();
+                resumen.textContent = '';
+                estado.textContent = 'No se pudo conectar con el servicio de zonas. Intenta de nuevo más tarde.';
+                estado.style.display = 'block';
+            }
+        }
+
+        document.getElementById('zonaMetros').addEventListener('change', cargarZonas);
+        document.getElementById('zonaMinimo').addEventListener('change', cargarZonas);
+
+        // ======================================================
+        // 6d. PERROS PERDIDOS DE VISTA (Funcionalidad 7)
+        //     Consume GET /f/perdidos?dias=14&metros=1000 del servicio Elixir:
+        //     avistamientos sin reportarse en N días, agrupados por zona.
+        // ======================================================
+        const mapPerdidos = L.map('mapPerdidos').setView([25.4237, -101.0053], 12);
+        L.tileLayer(URL_TILES, { maxZoom: 19, attribution: 'Tiles © Esri' }).addTo(mapPerdidos);
+        const capaPerdidos = L.featureGroup().addTo(mapPerdidos);
+
+        function fechaCorta(iso) {
+            return new Date(iso).toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' });
+        }
+
+        function filaPerdido(p) {
+            const fila = document.createElement('div');
+            fila.className = 'perd-fila';
+
+            const info = document.createElement('div');
+            const nombre = document.createElement('strong');
+            nombre.textContent = p.nombre;
+            const detalle = document.createElement('small');
+            detalle.textContent = `Visto por última vez hace ${p.dias_sin_ver} días (${fechaCorta(p.fecha)})`;
+            info.append(nombre, detalle);
+
+            const boton = document.createElement('button');
+            boton.textContent = 'Ver detalle';
+            boton.addEventListener('click', () => verDetalle(p.id));
+
+            fila.append(info, boton);
+            return fila;
+        }
+
+        async function cargarPerdidos() {
+            const dias = document.getElementById('perdDias').value;
+            const metros = document.getElementById('perdMetros').value;
+            const resumen = document.getElementById('perdResumen');
+            const lista = document.getElementById('perdLista');
+            const estado = document.getElementById('estadoPerdidos');
+            estado.style.display = 'none';
+
+            try {
+                const res = await fetch(`${API_BASE}/f/perdidos?dias=${encodeURIComponent(dias)}&metros=${encodeURIComponent(metros)}`);
+                if (!res.ok) throw new Error('Respuesta no válida del servicio');
+                const zonas = await res.json();
+
+                capaPerdidos.clearLayers();
+                lista.replaceChildren();
+                if (zonas.length === 0) {
+                    resumen.textContent = '';
+                    estado.textContent = `Ningún perrito lleva ${dias} días o más sin reportarse. ¡Buenas noticias!`;
+                    estado.style.display = 'block';
+                    return;
+                }
+
+                const total = zonas.reduce((suma, z) => suma + z.cantidad, 0);
+                resumen.textContent = `${total} ${total === 1 ? 'perrito sin reportarse' : 'perritos sin reportarse'} en ${dias} días o más, en ${zonas.length} ${zonas.length === 1 ? 'zona' : 'zonas'}`;
+
+                zonas.forEach((z, i) => {
+                    const l = z.limites;
+                    capaPerdidos.addLayer(L.rectangle([[l.lat_min, l.lon_min], [l.lat_max, l.lon_max]], {
+                        color: COLOR_NIVEL[z.nivel], weight: 1, fillOpacity: 0.15
+                    }));
+
+                    const tarjeta = document.createElement('div');
+                    tarjeta.className = 'perd-zona';
+                    const titulo = document.createElement('h3');
+                    titulo.textContent = `Zona ${i + 1} · ${z.cantidad} ${z.cantidad === 1 ? 'perrito' : 'perritos'}`;
+                    tarjeta.appendChild(titulo);
+
+                    z.perros.forEach(p => {
+                        const marca = L.circleMarker([p.lat, p.lon], { radius: 7, color: '#7c3aed', fillColor: '#a78bfa', fillOpacity: 0.9 });
+                        marca.bindTooltip(`${p.nombre} · hace ${p.dias_sin_ver} días`);
+                        capaPerdidos.addLayer(marca);
+                        tarjeta.appendChild(filaPerdido(p));
+                    });
+                    lista.appendChild(tarjeta);
+                });
+                mapPerdidos.fitBounds(capaPerdidos.getBounds(), { padding: [20, 20] });
+            } catch (error) {
+                console.warn('No se pudieron cargar los perros perdidos:', error);
+                capaPerdidos.clearLayers();
+                lista.replaceChildren();
+                resumen.textContent = '';
+                estado.textContent = 'No se pudo conectar con el servicio de perros perdidos. Intenta de nuevo más tarde.';
+                estado.style.display = 'block';
+            }
+        }
+
+        document.getElementById('perdDias').addEventListener('change', cargarPerdidos);
+        document.getElementById('perdMetros').addEventListener('change', cargarPerdidos);
 
         // ======================================================
         // 7. DETALLE
