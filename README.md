@@ -450,7 +450,43 @@ Para probar cámara y geolocalización desde un teléfono (requieren HTTPS):
 | Integrante | Funcionalidad | Issue | Rama | Endpoint |
 |---|---|---|---|---|
 | Valery Alvarado | _por definir_ | _#_ | _rama_ | `/f/...` |
-| Marisol Hernández | _por definir_ | _#_ | _rama_ | `/f/...` |
+| Marisol Hernández | Estadísticas: los más comunes por color, raza o día | #7 | `estadisticas-7-v2` (núcleo y ruta), `estadisticas-frontend` (pestaña) | `GET /f/estadisticas` |
 | Alma Bujanda | _por definir_ | _#_ | _rama_ | `/f/...` |
 
 > Completar cuando se registren las funcionalidades con el profesor. Por cada una documentar: qué hace, cómo se usa en la app, método/ruta/ejemplo de respuesta y dónde están en el código el núcleo puro, el orden superior y la recursión.
+
+### Estadísticas (Marisol Hernández, issue #7)
+
+**Qué hace.** Cuenta cuántos avistamientos hay por color, raza o día de registro y devuelve los más comunes (top N).
+
+**Cómo se usa en la app.** Pestaña **Estadísticas**: se elige "Agrupar por" (color, raza o día) y "Mostrar" (Top 3, 5 o 10), y aparece una gráfica de barras.
+
+**Endpoint.** `GET /f/estadisticas?por=color|raza|dia&n=5`
+
+Ejemplo (`/f/estadisticas?por=dia&n=3`):
+
+```json
+[
+  {"clave": "2026-10-20", "total": 13},
+  {"clave": "2026-10-22", "total": 12},
+  {"clave": "2026-10-21", "total": 9}
+]
+```
+
+Si el backend del P1 no responde, devuelve `503` con `{"error": "backend no disponible"}`.
+
+**Dónde está en el código.**
+
+| Requisito | Archivo y función |
+|---|---|
+| Núcleo puro | `funcional/lib/perritos/estadisticas.ex` (`Perritos.Estadisticas`) |
+| Cáscara (ruta) | `funcional/lib/perritos/router.ex` (`get "/f/estadisticas"`) |
+| Orden superior (recibe función) | `contar_por/2` |
+| Orden superior (regresa función) | `claves_por/1` |
+| Recursión explícita | `primeros/2` |
+| Pattern matching y cláusulas múltiples | `claves_por/1`, `nombre_raza/1` |
+| Composición con `\|>` | `top/3`, `ordenar/1` |
+| Pruebas | `funcional/test/estadisticas_test.exs` (9 pruebas y doctests) |
+| Frontend | `index.html` (pestaña `estadisticas`, función `cargarEstadisticas`) |
+
+**Cómo probarla.** `docker compose run --rm herramientas mix test` o, con todo levantado, abrir `http://localhost:8080/f/estadisticas?por=color&n=3`.
