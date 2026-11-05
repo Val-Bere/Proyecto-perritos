@@ -100,7 +100,24 @@ defmodule Perritos.AnalisisTest do
   end
 
   test "verificacion extra de integracion de analisis" do
-  assert is_list(Analisis.perdidos([], 10, @ahora))
-end
+    assert is_list(Analisis.perdidos([], 10, @ahora))
+  end
 
+  test "con 0 días cuentan todos los que tienen fecha, del más antiguo al más reciente" do
+    lista = [perro(1, ~N[2026-10-26 08:00:00]), perro(2, ~N[2026-08-01 10:00:00])]
+    ids = lista |> Analisis.perdidos(0, @ahora) |> Enum.map(& &1.id)
+    assert ids == [2, 1]
+  end
+
+  test "una fecha futura no cuenta como perdida" do
+    assert Analisis.perdidos([perro(1, ~N[2026-10-30 10:00:00])], 10, @ahora) == []
+  end
+
+  test "con celdas más chicas los mismos perros quedan en zonas distintas" do
+    p1 = perro(1, ~N[2026-08-01 10:00:00], 25.4231, -101.0000)
+    p2 = perro(2, ~N[2026-08-01 10:00:00], 25.4232, -100.9995)
+
+    assert length(Analisis.perdidos_por_zona([p1, p2], 10, @ahora, 500)) == 1
+    assert length(Analisis.perdidos_por_zona([p1, p2], 10, @ahora, 250)) == 2
+  end
 end
